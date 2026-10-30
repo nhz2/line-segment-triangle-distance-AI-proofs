@@ -1,0 +1,20 @@
+import DistanceAccuracy.FaceLocalAdmissible
+import DistanceAccuracy.CrossingAdmissible
+import DistanceAccuracy.SecondSolveAdmissible
+import DistanceAccuracy.NormUpper
+import DistanceAccuracy.BoundaryEdgeUpper
+import DistanceAccuracy.ComputedBCTransfer
+import DistanceAccuracy.InteriorCandidateUpper
+import DistanceAccuracy.FaceFinite
+
+#print axioms DistanceAccuracy.ProjectionRounding.word_face_admissible
+#print axioms DistanceAccuracy.CrossingHeight.word_crossing_thick
+#print axioms DistanceAccuracy.ProjectionRounding.second_solve_admissible
+#print axioms DistanceAccuracy.ProjectionRounding.direct_solve_admissible
+#print axioms DistanceAccuracy.ProjectionRounding.endpoint_solve_admissible
+#print axioms DistanceAccuracy.NormUpper.norm_upper
+
+#print axioms DistanceAccuracy.Geometry.closest_point_triangle
+#print axioms DistanceAccuracy.BoundaryEdgeUpper.boundary_upper
+#print axioms DistanceAccuracy.WordGeometryTransfer.computed_bc_transfer
+#print axioms DistanceAccuracy.ProjectionRounding.face_finite_admissible
