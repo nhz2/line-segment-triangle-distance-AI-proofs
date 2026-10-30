@@ -1,7 +1,8 @@
 # Distance accuracy: claim 4 with constant 64
 
 This directory contains a natural-language proof and a complete Lean proof of
-claim 4 for the executable IEEE-word transcription of `dist_sqr_r_s_t`:
+claim 4 for the executable IEEE-word transcription of `dist_sqr_r_s_t` in
+SimplexCellLists.jl:
 
 ```
 |sqrt(q) - d| ≤ 64 * eps(T) * L + floatmin(T)^(1/4).
@@ -19,6 +20,12 @@ and gradual underflow.
 The original constant 8 is false. The included exact-intersection example
 also disproves constant 9, including its underflow allowance.
 
+## Authorship
+
+The proofs, Lean development, and checks in this directory were written by
+Codex GPT-6 Astra. Claude Opus 5.5 independently reviewed them; see
+[Independent review](#independent-review).
+
 ## Final theorems
 
 [FinalClaim4.lean](DistanceAccuracy/FinalClaim4.lean) declares:
@@ -28,9 +35,15 @@ also disproves constant 9, including its underflow allowance.
 - `DistanceAccuracy.finalClaim4_binary64`
 
 The latter two prove `Geometry.accuracyStatement fp32` and
-`Geometry.accuracyStatement fp64`. They take no output-accuracy certificates,
-local rounding estimates, geometric coverage assumptions, or finite-intermediate
-hypotheses. Those obligations are proved from the admissible inputs.
+`Geometry.accuracyStatement fp64`, defined in
+[Geometry.lean](DistanceAccuracy/Geometry.lean). They take no output-accuracy
+certificates, local rounding estimates, geometric coverage assumptions, or
+finite-intermediate hypotheses. Those obligations are proved from the
+admissible inputs.
+
+In the statement, `2 * I.format.unitRoundoff` is `eps(T)` (`2^-23` or `2^-52`),
+`I.format.minNormal` is `floatmin(T)`, and `I.format.maxFinite` is
+`floatmax(T)`, as defined by the pinned FP library.
 
 [Audit.lean](Audit.lean) prints the final theorem types and checks their logical
 axioms. The dependencies are only `propext`, `Classical.choice`, and `Quot.sound`.
@@ -38,35 +51,48 @@ There are no `sorry`, custom axioms, or `native_decide` proofs in this developme
 The older `format_claim4_conditional` theorem remains as a separate formalization
 of the earlier certificate-based proof; the final theorem does not use it.
 
-## Proof and model boundaries
+## Trusted base and scope
+
+Lean checks every step from the definitions to the final theorem. The result
+relies on these unverified links:
+
+- **FP library semantics.** The theorem is about the IEEE operations of the
+  pinned [lean-ieee754](https://github.com/tunnellm/lean-ieee754) library, not
+  about hardware. A rounding bug in that library would make the theorem
+  describe the wrong arithmetic. The model fixtures compare it with hardware
+  results on 42 inputs.
+- **Transcription.** [IEEEAlgorithm.lean](DistanceAccuracy/IEEEAlgorithm.lean)
+  transcribes the arithmetic, exceptional-value handling, clamps, candidate
+  comparisons, weight remappings, and folds in `src/distances.jl` and
+  `src/util.jl`. The correspondence is reviewed and regression-tested; it is
+  not a verified Julia compiler or a machine-checked source translation.
+- **Julia runtime.** The theorem assumes default IEEE behavior. It does not
+  hold under `@fastmath` or with `set_zero_subnormals(true)`, which removes
+  the gradual underflow behind the `floatmin(T)^(1/4)` term.
+
+Not covered:
+
+- The `SIMD.Vec` code path. The source states it is bit identical to the
+  scalar path, but that is not proved here.
+- Element types other than `Float32` and `Float64`, such as `Float16`.
+- Claim 5, the accuracy of `r` and the weights. [reconstruction.md](reconstruction.md)
+  argues it separately; the claim-4 theorem does not assume it.
+
+## Documents
 
 - [ieee-proof.md](ieee-proof.md) is the natural-language proof corresponding
   to the completed Lean theorem.
 - [formalization-notes.md](formalization-notes.md) maps that proof route to
   its implementation-level lemmas and constants.
-- [proof.md](proof.md) is a superseded historical draft. Its rounded-intersection
-  argument has a gap; it should not be used as the proof of claim 4. The completed
-  proof does not use that argument, the implementation comments, or an external
-  compensated-determinant accuracy theorem.
 - [crossing-proof.md](crossing-proof.md) details the thin-triangle, plane-root,
   and missed-root endpoint cases.
 - [lower-bound.md](lower-bound.md) explains the independently proved lower
   inequality and the small-coordinate case.
 - [reconstruction.md](reconstruction.md) records the separate claim-5 argument.
-  The final claim-4 theorem does not assume claim 5.
-
-[IEEEAlgorithm.lean](DistanceAccuracy/IEEEAlgorithm.lean) explicitly transcribes
-the arithmetic, exceptional-value handling, clamps, candidate comparisons,
-weight remappings, and folds in `src/distances.jl` and `src/util.jl`. Lean proves
-the theorem about this transcription and the pinned FP library's IEEE semantics.
-The correspondence between the Julia source and the transcription is reviewed
-and regression-tested; it is not a verified Julia compiler or a machine-checked
-source translation. The source hashes are recorded in `proof.md`.
-
-`ModelFixtures.lean` checks 42 fixtures against Julia bit-for-bit, including
-squared distance, separation vector, and weights, in both formats and argument
-orders. These fixtures check transcription regressions; the universal accuracy
-result comes from the Lean proof.
+- [proof.md](proof.md) is a superseded historical draft. Its rounded-intersection
+  argument has a gap; it should not be used as the proof of claim 4. The completed
+  proof does not use that argument, the implementation comments, or an external
+  compensated-determinant accuracy theorem. It records the analyzed source hashes.
 
 ## Build and audit
 
@@ -76,15 +102,25 @@ Lean is pinned to `v4.33.1`; FP to commit
 From this directory:
 
 ```sh
+lake exe cache get   # download prebuilt Mathlib instead of compiling it
 lake build
 lake env lean Audit.lean
 lake env lean ModelFixtures.lean
 ```
 
-For a fresh checkout, `lake update` obtains the pinned dependencies first.
-The IEEE reference encoder makes the fixture run take several minutes.
+With the Mathlib cache, `lake build` takes a few minutes. The fixture run uses
+the library's IEEE reference encoder and takes about a minute.
 
-Independent checks, from the repository root:
+`ModelFixtures.lean` checks 42 fixtures against Julia bit for bit, including
+squared distance, separation vector, and weights, in both formats and argument
+orders. These fixtures catch transcription regressions; the universal accuracy
+result comes from the Lean proof. Regenerate them with
+`julia --project=distance-accuracy distance-accuracy/generate_model_fixtures.jl`.
+
+### Independent numerical checks
+
+From the repository root, after
+`julia --project=distance-accuracy -e 'using Pkg; Pkg.instantiate()'`:
 
 ```sh
 python3 distance-accuracy/check_constants.py
@@ -92,22 +128,28 @@ julia --project=distance-accuracy distance-accuracy/check_reconstruction.jl
 julia --project=distance-accuracy distance-accuracy/counterexample.jl
 ```
 
+These check rational constant estimates, reconstruction inequalities, and the
+counterexample. They supplement the formal proof.
+
 The Julia scripts use the `distance-accuracy` project, a member of the root
 workspace. The root `Manifest.toml` pins SimplexCellLists.jl to commit
-`f15f96a19c1aa36f02a224557f4628c4437944cb`; run
-`julia --project=distance-accuracy -e 'using Pkg; Pkg.instantiate()'` once first.
-That commit's `src/util.jl` matches
-the analyzed hash in `proof.md`. Its `src/distances.jl` differs from the analyzed
-file (commit `aaff918c16d8a7ed3c804f7caaf74bcfbee618a9`) only in docstrings.
+`f15f96a19c1aa36f02a224557f4628c4437944cb`. That commit's `src/util.jl`
+matches the analyzed hash in `proof.md`. Its `src/distances.jl` differs from
+the analyzed file (commit `aaff918c16d8a7ed3c804f7caaf74bcfbee618a9`) only in
+docstrings.
 
-These check rational constant estimates, reconstruction inequalities, and the
-counterexample. They supplement the formal proof. Fixtures can be regenerated
-with `julia --project=distance-accuracy distance-accuracy/generate_model_fixtures.jl`.
+## Independent review
 
-## Validation
+On 2026-10-29, Claude Opus 5.5 reviewed this development from a fresh checkout:
 
-The complete default `lake build` and `lake env lean Audit.lean` pass. The final
-binary32/binary64 theorems have only the three standard logical dependencies
-listed above. The 42 model fixtures and all three independent numerical checks
-also passed during this proof session; the algorithm transcription and the
-analyzed source hashes were unchanged afterward.
+- `lake build` and `lake env lean Audit.lean` pass. The final theorems depend
+  only on `propext`, `Classical.choice`, and `Quot.sound`. Neither this
+  project nor the FP library uses `sorry`, custom axioms, `native_decide`,
+  `implemented_by`, or `extern`.
+- A restatement of `finalClaim4_binary64` with literal constants (`2^-52`,
+  `2^-1022`) and the explicit premises type-checks against the theorem.
+- `IEEEAlgorithm.lean` was compared line by line with `src/distances.jl` and
+  `src/util.jl`, and matches: FMA nesting, NaN clamping, candidate order and
+  tie-breaking, weight remapping, and argument-swap dispatch.
+- Regenerating the fixtures from Julia reproduced `ModelFixtures.lean` exactly,
+  and all 42 fixtures pass. The three independent numerical checks pass.
