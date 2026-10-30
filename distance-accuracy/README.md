@@ -133,10 +133,14 @@ counterexample. They supplement the formal proof.
 
 The Julia scripts use the `distance-accuracy` project, a member of the root
 workspace. The root `Manifest.toml` pins SimplexCellLists.jl to commit
-`f15f96a19c1aa36f02a224557f4628c4437944cb`. That commit's `src/util.jl`
-matches the analyzed hash in `proof.md`. Its `src/distances.jl` differs from
-the analyzed file (commit `aaff918c16d8a7ed3c804f7caaf74bcfbee618a9`) only in
-docstrings.
+`f15f96a19c1aa36f02a224557f4628c4437944cb`. The proof was written against
+commit `aaff918c16d8a7ed3c804f7caaf74bcfbee618a9`; the two commits differ only
+in docstrings. `proof.md` records the SHA-256 hashes of `src/distances.jl` and
+`src/util.jl` at both commits. To check the pinned copy:
+
+```sh
+julia --project=distance-accuracy -e 'using SimplexCellLists, SHA; for f in ("distances.jl", "util.jl"); println(f, " ", bytes2hex(open(sha256, joinpath(pkgdir(SimplexCellLists), "src", f)))); end'
+```
 
 ## Independent review
 

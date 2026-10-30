@@ -712,7 +712,12 @@ accuracy certificates. The transcription's correspondence to the Julia source
 is reviewed and regression-tested; it is not a verified source translation.
 See [README.md](README.md) for the theorem statements and validation scope.
 
-Source SHA-256 hashes at the time of writing:
+SHA-256 hashes of the SimplexCellLists.jl source. This analysis was written
+against commit `aaff918c16d8a7ed3c804f7caaf74bcfbee618a9`. The repository pins
+commit `f15f96a19c1aa36f02a224557f4628c4437944cb`, whose `src/distances.jl`
+differs from the analyzed file only in docstrings.
 
-- `src/distances.jl`: `3187326dc90b39ba6f002d6d071b51a3f09df879b0523e73a83201ad67c5d9fb`
-- `src/util.jl`: `ddcdc2d36f85328454a8246389de082ce558766f5d8b79078208aa2005db65df`
+| File | Analyzed (`aaff918`) | Pinned (`f15f96a`) |
+| --- | --- | --- |
+| `src/distances.jl` | `3187326dc90b39ba6f002d6d071b51a3f09df879b0523e73a83201ad67c5d9fb` | `2a86a7b408c1a7219ee67ae803313442d0c4f1c56dfdd3e8c23113d837ab8c88` |
+| `src/util.jl` | `ddcdc2d36f85328454a8246389de082ce558766f5d8b79078208aa2005db65df` | `ddcdc2d36f85328454a8246389de082ce558766f5d8b79078208aa2005db65df` |
