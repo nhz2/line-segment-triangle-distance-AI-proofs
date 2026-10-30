@@ -1,0 +1,21 @@
+[deps]
+Chairmarks = "0ca39b1e-fe0b-4e98-acfc-b1656634c4de"
+Clang_jll = "0ee61d77-7f21-5576-8119-9fcc46b10100"
+Downloads = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
+Libdl = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+SHA = "ea8e919c-243c-51af-8825-aaa63cd721ce"
+SIMD = "fdea26ae-647d-5447-a871-4b548cad5224"
+SimplexCellLists = "fbe69cd6-f244-4ce4-a90b-8979d86c9ea4"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+boost_jll = "28df3c45-c428-5900-9ff8-a3135698ca75"
+
+[sources]
+SimplexCellLists = {rev = "f15f96a19c1aa36f02a224557f4628c4437944cb", url = "https://github.com/medyan-dev/SimplexCellLists.jl.git"}
+
+[compat]
+Clang_jll = "=20.1.8"

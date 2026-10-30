@@ -1,0 +1,8 @@
+# Inputs and references, made by harness/gen.jl
+data/
+# Downloaded sources, GMP/MPFR copies and built libraries, made by build.jl
+build/
+# The latest run's results, made by harness/accuracy.jl and harness/bench.jl; harness/record.jl
+# keeps them in results/runs/
+results/accuracy.csv
+results/timing.csv

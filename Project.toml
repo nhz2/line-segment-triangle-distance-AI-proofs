@@ -1,2 +1,2 @@
 [workspace]
-projects = ["distance-accuracy"]
+projects = ["distance-accuracy", "library-comparison"]

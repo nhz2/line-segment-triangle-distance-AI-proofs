@@ -8,6 +8,7 @@ AI-written proofs about the floating-point accuracy of the distance kernels in
 | Directory | Result | Status |
 | --- | --- | --- |
 | [distance-accuracy](distance-accuracy) | Claim 4 of `dist_sqr_r_s_t`: `\|sqrt(d²) - d\| ≤ 64*eps(T)*ℓ + floatmin(T)^(1/4)` for `Float32` and `Float64` | Proved in Lean 4, no `sorry` or custom axioms |
+| [library-comparison](library-comparison) | Speed and accuracy of `dist_sqr` against CGAL and Geometric Tools in `Float64`, with errors as a fraction of the claim 4 bound | Results of each run in [library-comparison/results/runs](library-comparison/results/runs) |
 
 The Lean proof in `distance-accuracy` was written by Codex GPT-6 Astra and
 independently reviewed by Claude Opus 5.5. It also shows that the constant 8
@@ -19,7 +20,10 @@ exact theorem, what it trusts, and how to check it.
 
 - `distance-accuracy/`: the Lean project, natural-language proofs, and
   independent Python and Julia checks.
-- `Project.toml`, `Manifest.toml`: a Julia workspace that pins
+- `library-comparison/`: a Julia project that builds CGAL and Geometric Tools
+  shims and compares them with `dist_sqr`.
+- `Project.toml`, `Manifest.toml`: a Julia workspace of `distance-accuracy`
+  and `library-comparison`, with one shared Manifest that pins
   SimplexCellLists.jl to the commit the proof analyzes.
 
 ## Quick check
