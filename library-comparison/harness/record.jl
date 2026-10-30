@@ -60,7 +60,11 @@ function main()
         println(io, "## Commit\n")
         println(io, "`", commit, "`", isempty(status) ? "" : ", with uncommitted changes:", "\n")
         isempty(status) || println(io, "```\n", status, "\n```\n")
-        println(io, "SimplexCellLists.jl: `", scl.git_source, "` at `", scl.git_revision, "`\n")
+        if scl.git_source === nothing
+            println(io, "SimplexCellLists.jl: `", scl.version, "`, git-tree-sha1 `", scl.tree_hash, "`\n")
+        else
+            println(io, "SimplexCellLists.jl: `", scl.git_source, "` at `", scl.git_revision, "`\n")
+        end
         println(io, "## versioninfo()\n")
         println(io, "```")
         versioninfo(io)

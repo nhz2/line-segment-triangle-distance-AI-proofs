@@ -4,5 +4,5 @@ SimplexCellLists = "fbe69cd6-f244-4ce4-a90b-8979d86c9ea4"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
-[sources]
-SimplexCellLists = {rev = "f15f96a19c1aa36f02a224557f4628c4437944cb", url = "https://github.com/medyan-dev/SimplexCellLists.jl.git"}
+[compat]
+SimplexCellLists = "=0.3.0"

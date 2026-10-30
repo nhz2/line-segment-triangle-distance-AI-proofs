@@ -14,8 +14,6 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 boost_jll = "28df3c45-c428-5900-9ff8-a3135698ca75"
 
-[sources]
-SimplexCellLists = {rev = "f15f96a19c1aa36f02a224557f4628c4437944cb", url = "https://github.com/medyan-dev/SimplexCellLists.jl.git"}
-
 [compat]
 Clang_jll = "=20.1.8"
+SimplexCellLists = "=0.3.0"

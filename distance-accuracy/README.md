@@ -92,7 +92,7 @@ Not covered:
 - [proof.md](proof.md) is a superseded historical draft. Its rounded-intersection
   argument has a gap; it should not be used as the proof of claim 4. The completed
   proof does not use that argument, the implementation comments, or an external
-  compensated-determinant accuracy theorem. It records the analyzed source hashes.
+  compensated-determinant accuracy theorem.
 
 ## Build and audit
 
@@ -132,26 +132,20 @@ These check rational constant estimates, reconstruction inequalities, and the
 counterexample. They supplement the formal proof.
 
 The Julia scripts use the `distance-accuracy` project, a member of the root
-workspace. The root `Manifest.toml` pins SimplexCellLists.jl to commit
-`f15f96a19c1aa36f02a224557f4628c4437944cb`. The proof was written against
-commit `aaff918c16d8a7ed3c804f7caaf74bcfbee618a9`; the two commits differ only
-in docstrings. `proof.md` records the SHA-256 hashes of `src/distances.jl` and
-`src/util.jl` at both commits. To check the pinned copy:
-
-```sh
-julia --project=distance-accuracy -e 'using SimplexCellLists, SHA; for f in ("distances.jl", "util.jl"); println(f, " ", bytes2hex(open(sha256, joinpath(pkgdir(SimplexCellLists), "src", f)))); end'
-```
+workspace. The root `Manifest.toml` pins SimplexCellLists.jl to version 0.3.0.
 
 ## Independent review
 
-On 2026-10-29, Claude Opus 5.5 reviewed this development from a fresh checkout:
+On 2026-10-30, Claude Opus 5.5 reviewed this development against
+SimplexCellLists.jl 0.3.0:
 
-- `lake build` and `lake env lean Audit.lean` pass. The final theorems depend
-  only on `propext`, `Classical.choice`, and `Quot.sound`. Neither this
-  project nor the FP library uses `sorry`, custom axioms, `native_decide`,
-  `implemented_by`, or `extern`.
+- After a clean `lake build`, `lake env lean Audit.lean` passes. The final
+  theorems depend only on `propext`, `Classical.choice`, and `Quot.sound`.
+  Neither this project nor the FP library uses `sorry`, custom axioms,
+  `native_decide`, `implemented_by`, or `extern`.
 - A restatement of `finalClaim4_binary64` with literal constants (`2^-52`,
-  `2^-1022`) and the explicit premises type-checks against the theorem.
+  `2^-1022`, `(2^53 - 1) * 2^971`) and the explicit premises type-checks
+  against the theorem.
 - `IEEEAlgorithm.lean` was compared line by line with `src/distances.jl` and
   `src/util.jl`, and matches: FMA nesting, NaN clamping, candidate order and
   tie-breaking, weight remapping, and argument-swap dispatch.

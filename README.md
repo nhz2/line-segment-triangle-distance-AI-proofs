@@ -24,7 +24,7 @@ exact theorem, what it trusts, and how to check it.
   shims and compares them with `dist_sqr`.
 - `Project.toml`, `Manifest.toml`: a Julia workspace of `distance-accuracy`
   and `library-comparison`, with one shared Manifest that pins
-  SimplexCellLists.jl to the commit the proof analyzes.
+  SimplexCellLists.jl to version 0.3.0, the version the proof analyzes.
 
 ## Quick check
 
