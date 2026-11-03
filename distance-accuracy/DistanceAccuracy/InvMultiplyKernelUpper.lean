@@ -1,5 +1,5 @@
 import DistanceAccuracy.InvMultiplyRaw
-import DistanceAccuracy.ThreeDivideStored
+import DistanceAccuracy.ReprojectStored
 namespace DistanceAccuracy.InvMultiplyKernelUpper
 open FP.IEEE FP.IEEE.Interchange IEEEAlgorithm IEEEBridge OperationBounds
 open DistanceAccuracy.Determinant ProjectionRounding UpperSelection

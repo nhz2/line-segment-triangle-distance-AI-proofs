@@ -1,4 +1,4 @@
-# Run: julia --project=distance-accuracy --startup-file=no distance-accuracy/check_three_divide.jl
+# Run: julia --project=distance-accuracy --startup-file=no distance-accuracy/check_segment_kernel.jl
 using SimplexCellLists, StaticArrays, LinearAlgebra, Random, Test, SHA
 const R = Rational{BigInt}
 proj(n, d) = iszero(d) ? zero(n) : clamp(n/d, zero(n), one(n))

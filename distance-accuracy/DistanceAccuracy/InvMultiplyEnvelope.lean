@@ -1,4 +1,4 @@
-import DistanceAccuracy.ThreeDivideEnvelope
+import DistanceAccuracy.ReprojectEnvelope
 import DistanceAccuracy.InvMultiplyAdmissible
 import DistanceAccuracy.EnvelopeBudget
 namespace DistanceAccuracy

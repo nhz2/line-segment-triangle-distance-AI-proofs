@@ -1,4 +1,4 @@
-import DistanceAccuracy.ThreeDivideCoverage
+import DistanceAccuracy.ReprojectCoverage
 import DistanceAccuracy.Constants
 namespace DistanceAccuracy
 set_option maxHeartbeats 1500000

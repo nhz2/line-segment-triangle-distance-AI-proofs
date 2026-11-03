@@ -1,5 +1,5 @@
 import DistanceAccuracy.WordFaceFinite
-import DistanceAccuracy.ThreeDivideProjection
+import DistanceAccuracy.ReprojectProjection
 namespace DistanceAccuracy.InvProjectionRounding
 open FP.IEEE FP.IEEE.Interchange IEEEAlgorithm IEEEBridge OperationBounds Determinant ProjectionRounding
 set_option maxHeartbeats 2000000

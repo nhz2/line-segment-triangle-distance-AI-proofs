@@ -177,7 +177,7 @@ theorem raw_upper (fmt : DistanceAccuracy.Format)
       have hw' : ‖GeometryCoverage.residual (realVec r) (-realVec p) (realVec q) s₀ t₀‖ ≤ B := by
         have hid : GeometryCoverage.residual (realVec r) (-realVec p) (realVec q) s₀ t₀ = realVec r+t₀•realVec q-s₀•realVec p := by dsimp [GeometryCoverage.residual]; module
         rw [hid]; exact hwitness.trans hBd
-      obtain ⟨w,hw,hwn⟩ := ThreeDivideGeometry.rounded_witness
+      obtain ⟨w,hw,hwn⟩ := ReprojectGeometry.rounded_witness
         (neg_ne_zero.mpr (norm_pos_iff.mp ((fourthRoot_nonneg _).trans_lt hp))) hs₀ ht₀ hvr hB hK (show 0 ≤ 32*A by positivity) hw' hline' hc
       have hwn' : ‖realVec r+w•realVec q-(s:ℝ)•realVec p‖ ≤ hypot B K+32*A := by
         convert hwn using 1; congr 1; dsimp [GeometryCoverage.residual]; module

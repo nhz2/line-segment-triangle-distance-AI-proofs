@@ -1,6 +1,6 @@
-import DistanceAccuracy.ThreeDivideGeometry
+import DistanceAccuracy.ReprojectGeometry
 import DistanceAccuracy.UnderflowAbsorption
-namespace DistanceAccuracy.ThreeDivideGeometry
+namespace DistanceAccuracy.ReprojectGeometry
 open GeometryCoverage
 set_option maxHeartbeats 1500000
 
@@ -54,7 +54,7 @@ theorem rounded_witness {R E F : E3} {s₀ t₀ t s B K C : ℝ}
     exact ⟨v,hv,by linarith [le_hypot B K]⟩
   · exact ⟨t,ht,line_nearby hE hB hK hC hl he⟩
 
-end DistanceAccuracy.ThreeDivideGeometry
+end DistanceAccuracy.ReprojectGeometry
 
 namespace DistanceAccuracy
 set_option exponentiation.threshold 2048

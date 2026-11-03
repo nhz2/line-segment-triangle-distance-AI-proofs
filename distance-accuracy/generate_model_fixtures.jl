@@ -2,10 +2,9 @@
 # Lean IEEE model checks these at runtime; these are regression tests, not proofs.
 using SimplexCellLists, StaticArrays
 const inv_multiply = "--inv-multiply" in ARGS
-const three_divide = "--three-divide" in ARGS
-const model = inv_multiply ? "InvMultiplyAlgorithm" : three_divide ? "ThreeDivideAlgorithm" : "IEEEAlgorithm"
-const evaluator = inv_multiply ? "InvMultiplyAlgorithm.evaluate" : three_divide ? "ThreeDivideAlgorithm.evaluate" : "evaluate"
-const fixture_namespace = inv_multiply ? "InvMultiplyFixtures" : three_divide ? "ThreeDivideFixtures" : "ModelFixtures"
+const model = inv_multiply ? "InvMultiplyAlgorithm" : "IEEEAlgorithm"
+const evaluator = inv_multiply ? "InvMultiplyAlgorithm.evaluate" : "evaluate"
+const fixture_namespace = inv_multiply ? "InvMultiplyFixtures" : "ModelFixtures"
 const destination = joinpath(@__DIR__, fixture_namespace * ".lean")
 const origin = SA[0,0,0]
 const cases = [

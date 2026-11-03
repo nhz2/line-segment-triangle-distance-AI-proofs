@@ -1,8 +1,8 @@
 import DistanceAccuracy.LineReduction
 
-/-! Exact geometry for the three-division segment kernel. These theorems do
+/-! Exact geometry for the clamp-and-reproject segment kernel. These theorems do
 not assert an IEEE rounding bound. Division here is real division (0/0 = 0). -/
-namespace DistanceAccuracy.ThreeDivideGeometry
+namespace DistanceAccuracy.ReprojectGeometry
 open GeometryCoverage
 
 noncomputable def clip (t : ℝ) : ℝ := max 0 (min 1 t)
@@ -119,4 +119,4 @@ lemma third_formula (P Q R : E3) :
   simp [third, project, inner_sub_right,
     inner_smul_right, real_inner_comm Q P, neg_sub]
 
-end DistanceAccuracy.ThreeDivideGeometry
+end DistanceAccuracy.ReprojectGeometry

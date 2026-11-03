@@ -1,6 +1,6 @@
 import DistanceAccuracy.SecondSolveCore
 import DistanceAccuracy.WordSecondSolve
-import DistanceAccuracy.ThreeDivideGeometry
+import DistanceAccuracy.ReprojectGeometry
 
 namespace DistanceAccuracy.ProjectionRounding
 open Determinant

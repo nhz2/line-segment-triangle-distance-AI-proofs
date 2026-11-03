@@ -41,7 +41,4 @@ import DistanceAccuracy.EvaluateLower
 import DistanceAccuracy.LineReduction
 import DistanceAccuracy.KernelCoverage
 import DistanceAccuracy.FinalClaim4
-import DistanceAccuracy.ThreeDivideGeometry
-import DistanceAccuracy.ThreeDivideEvaluation
-import DistanceAccuracy.ThreeDivideFinal
 import DistanceAccuracy.InvMultiplyFinal
