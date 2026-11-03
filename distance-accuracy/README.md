@@ -20,11 +20,230 @@ and gradual underflow.
 The original constant 8 is false. The included exact-intersection example
 also disproves constant 9, including its underflow allowance.
 
+## Reciprocal-and-multiply revision
+
+**The same constant 64 is proved for SimplexCellLists.jl commit
+[`287e746`](https://github.com/medyan-dev/SimplexCellLists.jl/commit/287e746639b4e6aa63dba105cdd023fdd6dfe086)
+(#30), the commit the root workspace pins, with its two reciprocal
+solves**, in binary32 and binary64, for all nine ordered point/segment/triangle
+pairings, including degeneracies and the same admissible coordinate range.
+The first segment parameter still uses direct division. The second and third
+parameters use `fma(...)*inv(dot(direction,direction))`, as in the inspected
+source; this theorem does not replace every other division in the library.
+
+[InvMultiplyFinal.lean](DistanceAccuracy/InvMultiplyFinal.lean) provides
+`DistanceAccuracy.invMultiplyClaim4`, its `_binary32` and `_binary64`
+specializations, and `DistanceAccuracy.invMultiplyUpper`. Their only input
+premises are the original finite-coordinate admissibility conditions:
+
+```
+|sqrt(q) - d| ≤ 64 * eps(T) * L + floatmin(T)^(1/4).
+```
+
+The model is [InvMultiplyAlgorithm.lean](DistanceAccuracy/InvMultiplyAlgorithm.lean).
+It was transcribed from an uncommitted checkout of `src/distances.jl` on
+2026-11-02, SHA256
+`faa7bc862d6ddfd2d00c868fcf06eb87e9eb747d79ca40b75481fadd0b0ebc18`. The
+code of `src/distances.jl` at `287e746`, SHA256
+`06acfcfef240ea8b03db01a1072141cf0d568c449806ec982471a08a9254fd2c`, was
+then compared with the model line by line and matches: only comments
+changed. Between 0.3.0 and `287e746` the other kernels changed only by
+`_clamp01_div(n, d)` and `_inv0(x)`, which are `clamp01nan(n/d)` and
+`inv(x)` for floats, and `src/util.jl` did not change, so the shared
+`IEEEAlgorithm` kernels still match. The old models and their theorems remain separate. Reciprocal means correctly
+rounded `1/a`, followed by a separately rounded multiplication, under the
+same IEEE/FMA assumptions as the earlier proofs.
+
+The additional rounding is paid for as follows:
+
+- [InvMultiplyArithmetic.lean](DistanceAccuracy/InvMultiplyArithmetic.lean)
+  composes reciprocal and multiplication errors into a relative factor at
+  most `2.001rho`, where `rho = eps/2`, plus the usual subnormal product error.
+  [InvMultiplyDots.lean](DistanceAccuracy/InvMultiplyDots.lean) and its reversed
+  counterpart discharge reciprocal normality, reciprocal finiteness, and
+  product range from the original coordinate assumptions for non-short
+  directions. Short directions need no accurate reciprocal: their entire
+  geometric contribution is covered by the underflow budget.
+- [InvMultiplyProjection.lean](DistanceAccuracy/InvMultiplyProjection.lean)
+  and [InvMultiplyWord.lean](DistanceAccuracy/InvMultiplyWord.lean) establish
+  the enlarged local projection coefficient **9.38**, replacing **8.38**.
+- [InvMultiplyEnvelope.lean](DistanceAccuracy/InvMultiplyEnvelope.lean)
+  uses `FI(z) = max(F(z), 20)`. Both extra projection losses and the sharp
+  stored-score estimate fit `rho*D*FI(d/(rho*D)) + 3.55rho*D + 6h`.
+  The direct segment budget increases from `19rho*D + 6h` to `24rho*D + 6h`.
+  At the critical triangle crossing argument `z = 24.2`, `FI(z) = F(z)`;
+  the final triangle budget stays **`36.4rho*(3.5L) + 32h`**, which fits 64.
+
+From this directory:
+
+```sh
+lake build
+lake env lean InvMultiplyAudit.lean
+julia --project=. --startup-file=no generate_model_fixtures.jl --inv-multiply
+lake env lean InvMultiplyFixtures.lean
+```
+
+The axiom audit checks the actual executable-model theorem, with no local
+rounding or finite-intermediate certificates supplied by callers. The 54
+runtime fixtures compare squared distance, separation, and weights against
+Julia, including reciprocal overflow for tiny directions, directions just
+above the short-direction cutoff, and large coordinates. These are separate
+regression checks; the universal accuracy result is kernel-checked.
+
+## Three-division revision
+
+**The same constant-64 bound is proved for an intermediate three-division
+kernel, including segment/triangle and triangle/triangle.** That kernel
+divides directly in all three segment solves. It was never committed to
+SimplexCellLists.jl; the merged commit `287e746` uses the reciprocals of the
+[previous section](#reciprocal-and-multiply-revision) instead. Both IEEE formats, all nine
+ordered pairings, all degeneracies, and the original admissible coordinate
+range are covered:
+
+```
+|sqrt(q) - d| ≤ 64 * eps(T) * L + floatmin(T)^(1/4).
+```
+
+[ThreeDivideFinal.lean](DistanceAccuracy/ThreeDivideFinal.lean) declares:
+
+- `DistanceAccuracy.threeDivideUpper`: the requested upper inequality.
+- `DistanceAccuracy.threeDivideClaim4`: the complete two-sided bound.
+- `DistanceAccuracy.threeDivideClaim4_binary32` and
+  `DistanceAccuracy.threeDivideClaim4_binary64`: the format specializations.
+
+These take only the original finite-coordinate admissibility assumptions.
+There are no local rounding, finite-intermediate, coverage, or output-accuracy
+certificates supplied by the caller. The axiom audit reports only `propext`,
+`Classical.choice`, and `Quot.sound`; no `sorry`, custom axioms, or
+`native_decide` are used.
+
+The old three-candidate model and its theorem remain under `IEEEAlgorithm`
+and `finalClaim4`. The revised executable model is
+[ThreeDivideAlgorithm.lean](DistanceAccuracy/ThreeDivideAlgorithm.lean), and
+`threeDivideAccuracyStatement` explicitly evaluates that model. Separate
+names keep the two results distinguishable.
+
+The source inspected on 2026-11-02 is an uncommitted
+`src/distances.jl`, based on SimplexCellLists.jl commit `7c12846`, with SHA256
+`7f2278c09656a309a70e5c2fa9d5882d42b521cc718c93bda9dedf6cd3529e6b`. The same transcription, FP-library, and runtime
+trust qualifications described below apply to this revision.
+
+### Why the extra division still fits 64
+
+The old proof selected an explicit endpoint candidate when the relaxed line
+solution left the segment. The new proof replaces that argument as follows:
+
+1. [ThreeDivideProjection.lean](DistanceAccuracy/ThreeDivideProjection.lean),
+   [ThreeDivideWord.lean](DistanceAccuracy/ThreeDivideWord.lean), and
+   [ThreeDivideAdmissible.lean](DistanceAccuracy/ThreeDivideAdmissible.lean)
+   prove that the rounded second solve either selects the correct clipped
+   endpoint or has a bounded displacement from the unconstrained line
+   solution. In the latter case, orthogonality makes its contribution a
+   **squared** loss. The third solve has a second squared-loss estimate.
+   The shared `P·Q` word retains its actual operand order.
+2. [ThreeDivideCoverage.lean](DistanceAccuracy/ThreeDivideCoverage.lean) and
+   [ThreeDivideRaw.lean](DistanceAccuracy/ThreeDivideRaw.lean) combine those
+   estimates with boundary interpolation. They also handle either direction
+   being shorter than the fourth root of the least subnormal.
+3. [ThreeDivideStored.lean](DistanceAccuracy/ThreeDivideStored.lean) sharpens
+   reconstruction and norm evaluation. With `rho = eps/2`, `D = 3.5L`, and
+   `n` the exact residual norm at the computed weights, the stored root score
+   is at most
+   `(1 + 2.52rho)n + 1.001rho D + 3eta + sqrt(2eta)`.
+   Keeping the dependence on `n` saves enough error budget at small distances
+   to pay for the extra projection.
+4. [ThreeDivideEnvelope.lean](DistanceAccuracy/ThreeDivideEnvelope.lean)
+   proves that the new squared-loss function `G(z) = hypot(F(z), 8.38)` and
+   this sharper reconstruction fit the **same** old envelope
+   `rho D F(d/(rho D)) + 3.55rho D + 6h`. For large normalized distances the
+   extra squared loss is small; for small ones the reconstruction saving
+   covers it. All constants are exact rational numbers checked by Lean.
+5. [ThreeDivideKernelUpper.lean](DistanceAccuracy/ThreeDivideKernelUpper.lean)
+   discharges that envelope for the actual IEEE kernel. The separate
+   `ThreeDivide*Upper` and assembly modules carry it through the existing
+   nearest-feature and crossing geometry. The final triangle budget remains
+   `36.4rho(3.5L) + 32h`, which fits `128rho L + floatmin^(1/4)`.
+
+[ThreeDivideGeometry.lean](DistanceAccuracy/ThreeDivideGeometry.lean) also
+proves exact-real segment optimality, including parallel and zero directions,
+and identifies the three scalar formulas with the source formulas.
+[ThreeDivideEvaluation.lean](DistanceAccuracy/ThreeDivideEvaluation.lean)
+supplies the independently checked lower and small-coordinate bounds.
+
+### Revision checks
+
+From this directory:
+
+```sh
+lake build
+lake env lean ThreeDivideAudit.lean
+lake env lean ThreeDivideFixtures.lean
+julia --project=. --startup-file=no generate_model_fixtures.jl --three-divide
+julia --project=. --startup-file=no check_three_divide.jl 10000
+```
+
+The Julia commands run the root workspace's pinned commit `287e746`, not the
+three-division source. The 42 fixtures don't tell the two apart: the
+three-division model agrees with Julia at `287e746` bit for bit for squared
+distance, separation, and weights in both formats, so regenerating
+`ThreeDivideFixtures.lean` reproduces it exactly.
+
+The numerical search exercises whichever package is loaded. At `287e746` it
+passed 20,000 segment cases against an independent exact-rational
+enumeration and 4,000 segment/triangle and triangle/triangle cases whose
+reference results pass exact supporting-plane optimality certificates. Its
+largest sampled error was 2.81% of the constant-64 bound (2.60% on the
+three-division source). SimplexCellLists.jl's complete
+`test/test-mindistance.jl` also passed at `287e746`. These checks supplement the universal Lean theorem;
+they are not its justification.
+
+### Examples approaching 10 epsilon
+
+[rounding_examples.jl](rounding_examples.jl) contains explicit segment/triangle
+inputs, found for the three-division implementation. At `287e746` they
+give the same squared-distance words, so the coefficients below hold for
+both. All coordinates are
+exactly representable integers, and both pairs intersect exactly (`d = 0`).
+With `ell` the largest absolute input coordinate and real square root:
+
+| Format | `abs(sqrt(q) - d) / (eps(T) * ell)` | `ell` |
+| --- | ---: | ---: |
+| Float32 | 9.415350423342458560 | 10312324 |
+| Float64 | 9.185377033506981696 | 5552362190545168 |
+
+Multiplying all coordinates by `2^-24` and `2^-53`, respectively, makes
+their magnitudes less than one and preserves these coefficients. The script
+checks exact rational intersection, rational squared-error inequalities, and
+power-of-two rescaling. Even after adding the theorem's underflow allowance,
+constants 9.415 and 9.185, respectively, are insufficient on these inputs.
+These are examples found by search, not claimed worst cases; neither reaches 10.
+
+From this directory:
+
+```sh
+julia --project=. --startup-file=no rounding_examples.jl
+lake env lean RoundingExamples.lean
+```
+
+[RoundingExamples.lean](RoundingExamples.lean) kernel-checks the exact
+intersection and strict coefficient intervals `(9.415, 9.416)` and
+`(9.185, 9.186)`, with only the standard Lean axioms. Separate runtime fixtures
+check that the squared-distance output bits of both the reciprocal and
+three-division IEEE models match Julia; that
+bit comparison is not a kernel theorem. Regenerate the file with
+`rounding_examples.jl --generate-lean`. The deterministic mutation search is
+in [search_rounding_examples.jl](search_rounding_examples.jl); its optional
+argument sets the iteration count per format (default 50 million).
+
 ## Authorship
 
-The proofs, Lean development, and checks in this directory were written by
+The original three-candidate proof, Lean development, and checks were written by
 Codex GPT-6 Astra. Claude Opus 5.5 independently reviewed them; see
 [Independent review](#independent-review).
+
+The three-division and reciprocal-and-multiply revisions, their Lean
+development, and checks were also written by Codex GPT-6 Astra. The
+independent review predates them.
 
 ## Final theorems
 
@@ -64,7 +283,7 @@ relies on these unverified links:
 - **Transcription.** [IEEEAlgorithm.lean](DistanceAccuracy/IEEEAlgorithm.lean)
   transcribes the arithmetic, exceptional-value handling, clamps, candidate
   comparisons, weight remappings, and folds in `src/distances.jl` and
-  `src/util.jl`. The correspondence is reviewed and regression-tested; it is
+  `src/util.jl` of SimplexCellLists.jl 0.3.0. The correspondence is reviewed and regression-tested; it is
   not a verified Julia compiler or a machine-checked source translation.
 - **Julia runtime.** The theorem assumes default IEEE behavior. It does not
   hold under `@fastmath` or with `set_zero_subnormals(true)`, which removes
@@ -114,8 +333,11 @@ the library's IEEE reference encoder and takes about a minute.
 `ModelFixtures.lean` checks 42 fixtures against Julia bit for bit, including
 squared distance, separation vector, and weights, in both formats and argument
 orders. These fixtures catch transcription regressions; the universal accuracy
-result comes from the Lean proof. Regenerate them with
-`julia --project=distance-accuracy distance-accuracy/generate_model_fixtures.jl`.
+result comes from the Lean proof. They were generated with
+SimplexCellLists.jl 0.3.0, which `IEEEAlgorithm.lean` transcribes. The root
+workspace now pins `287e746`, whose new segment kernel gives a different `t`
+weight in the `parallel-segments` fixture, so regenerate them in an
+environment with 0.3.0 rather than with `--project=distance-accuracy`.
 
 ### Independent numerical checks
 
@@ -132,7 +354,9 @@ These check rational constant estimates, reconstruction inequalities, and the
 counterexample. They supplement the formal proof.
 
 The Julia scripts use the `distance-accuracy` project, a member of the root
-workspace. The root `Manifest.toml` pins SimplexCellLists.jl to version 0.3.0.
+workspace. The root `Manifest.toml` pins SimplexCellLists.jl to commit
+`287e746`. All three checks also pass there; the counterexample uses the
+segment/triangle crossing path, which did not change.
 
 ## Independent review
 

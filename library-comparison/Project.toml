@@ -16,4 +16,3 @@ boost_jll = "28df3c45-c428-5900-9ff8-a3135698ca75"
 
 [compat]
 Clang_jll = "=20.1.8"
-SimplexCellLists = "=0.3.0"

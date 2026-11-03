@@ -1,0 +1,14 @@
+import DistanceAccuracy.InvMultiplyFinal
+#print DistanceAccuracy.invMultiplyAccuracyStatement
+#check DistanceAccuracy.invMultiplyClaim4
+#print axioms DistanceAccuracy.InvProjectionRounding.inv_fma_representation
+#print axioms DistanceAccuracy.InvProjectionRounding.second_gradient_error
+#print axioms DistanceAccuracy.InvMultiplyKernelUpper.kernel_upper
+#print axioms DistanceAccuracy.InvMultiplyEvaluation.small_accuracy
+#print axioms DistanceAccuracy.InvMultiplySegmentUpper.accuracy
+#print axioms DistanceAccuracy.InvMultiplyTriangleUpper.segment_triangle_large
+#print axioms DistanceAccuracy.InvMultiplyTriangleUpper.triangle_triangle_large
+#print axioms DistanceAccuracy.invMultiplyUpper
+#print axioms DistanceAccuracy.invMultiplyClaim4
+#print axioms DistanceAccuracy.invMultiplyClaim4_binary32
+#print axioms DistanceAccuracy.invMultiplyClaim4_binary64

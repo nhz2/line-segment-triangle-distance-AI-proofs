@@ -2,7 +2,7 @@
 
 julia_version = "1.13.1"
 manifest_format = "2.1"
-project_hash = "b39b478eac0e0e69fd14c64476397b1643526709"
+project_hash = "0217cb661d4e910eb830fb856cb06961cd60b571"
 
 [[deps.ArgCheck]]
 git-tree-sha1 = "f9e9a66c9b7be1ad7372bbd9b062d9230c30c5ce"
@@ -201,10 +201,11 @@ version = "1.11.0"
 
 [[deps.SimplexCellLists]]
 deps = ["ArgCheck", "SIMD", "StaticArrays"]
-git-tree-sha1 = "660f9945c4c68baa166cca85cc5a7ba75650b8de"
-registries = "General"
+git-tree-sha1 = "3f847537c4b94331fcf3b106e6efb88c146d15d0"
+repo-rev = "287e746639b4e6aa63dba105cdd023fdd6dfe086"
+repo-url = "https://github.com/medyan-dev/SimplexCellLists.jl.git"
 uuid = "fbe69cd6-f244-4ce4-a90b-8979d86c9ea4"
-version = "0.3.0"
+version = "0.3.2-dev"
 
 [[deps.StaticArrays]]
 deps = ["LinearAlgebra", "PrecompileTools", "Random", "StaticArraysCore"]

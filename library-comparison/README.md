@@ -3,9 +3,10 @@
 A comparison of SimplexCellLists.jl's simplex distance functions with CGAL and Geometric
 Tools, for speed and accuracy, in Float64.
 
-SimplexCellLists.jl is pinned by `Project.toml` to version
-[0.3.0](https://github.com/medyan-dev/SimplexCellLists.jl/tree/v0.3.0),
-the version [`../distance-accuracy`](../distance-accuracy) analyzes. Paths like
+SimplexCellLists.jl is pinned by the root workspace to commit
+[`287e746`](https://github.com/medyan-dev/SimplexCellLists.jl/commit/287e746639b4e6aa63dba105cdd023fdd6dfe086),
+the version the reciprocal-and-multiply theorem in
+[`../distance-accuracy`](../distance-accuracy) analyzes. Paths like
 `src/distances.jl` below are in SimplexCellLists.jl.
 
 ## Results
