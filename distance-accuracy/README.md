@@ -20,6 +20,103 @@ and gradual underflow.
 The original constant 8 is false. The included exact-intersection example
 also disproves constant 9, including its underflow allowance.
 
+## FMA-order revision
+
+**The same constant 64 is proved for SimplexCellLists.jl commit
+[`e7f0a8ddb2e384638915430f6eab03f8189d9417`](https://github.com/medyan-dev/SimplexCellLists.jl/commit/e7f0a8ddb2e384638915430f6eab03f8189d9417)**
+(#33). The theorem covers every admissible distance, including zero and
+positive distances, all nine ordered point/segment/triangle pairings,
+degenerate inputs, and the full original coordinate range in binary32 and
+binary64. The arithmetic assumptions and trusted base below are unchanged.
+
+[FmaSwapFinal.lean](DistanceAccuracy/FmaSwapFinal.lean) declares
+`fmaSwapClaim4`, `fmaSwapClaim4_binary32`, `fmaSwapClaim4_binary64`, and
+`fmaSwapUpper`. The statement uses the new executable word model,
+[FmaSwapAlgorithm.lean](DistanceAccuracy/FmaSwapAlgorithm.lean), and only
+`Geometry.admissible` as its input hypothesis:
+
+```
+|sqrt(q) - d| ≤ 64 * eps(T) * L + floatmin(T)^(1/4).
+```
+
+The source change relative to `287e746` is exactly the segment reconstruction:
+
+```julia
+# 287e746
+r = fma3(-s, P, fma3(t, Q, Q0mP0))
+# e7f0a8d
+r = fma3(t, Q, fma3(-s, P, Q0mP0))
+```
+
+The SHA256 of `src/distances.jl` at the new commit is
+`cdd29e8492a81ba0946bf0a121aa4fc258df933d242e9f61826c0aabc9823bb8`.
+The diff confirms that the parameter solves, other distance kernels, and
+`src/util.jl` are unchanged. The model preserves all candidate comparisons,
+weight remappings, and argument-swap dispatch. Floating-point outputs can
+change with this nesting; the proof establishes the error bound for the new
+outputs independently of the old outputs.
+
+### Why the same bound holds at every distance
+
+1. The unchanged three parameter solves are definitionally the old ones in
+   [FmaSwapCore.lean](DistanceAccuracy/FmaSwapCore.lean). Their exact-residual
+   bound is reused directly from `InvMultiplyRaw.raw_upper`, including both
+   short-direction cases and the distance-dependent envelope.
+2. [FmaSwapStored.lean](DistanceAccuracy/FmaSwapStored.lean) proves finiteness
+   and rounding error for the new nested FMAs. Write `rho = eps/2`,
+   `eta = minSubnormal`, `D = 3.5L`, and `n = norm(R + tQ - sP)` for the
+   exact residual of the independently rounded differences. The common
+   segment geometry bounds `norm(R - sP)` by `D` (choose `t = 0`), just as it
+   bounded the old inner residual `norm(R + tQ)` by `D` (choose `s = 0`).
+   Thus the new two-FMA error is still at most
+   `(rho + rho^2)D + rho*n + (2 + rho)eta`. Combining this with the unchanged
+   stored dot-product bound gives exactly
+   `(1 + 2.52rho)n + 1.001rho*D + 3eta + sqrt(2eta)`.
+3. [FmaSwapKernelUpper.lean](DistanceAccuracy/FmaSwapKernelUpper.lean) feeds
+   that estimate into the existing `inv_score_envelope`. It retains the
+   full dependence on distance, rather than bounding only intersections.
+   The `FmaSwap*Upper` modules carry the result through nearest-feature and
+   crossing cases, preserving the segment budget `24rho*D + 6h` and the
+   triangle budget `36.4rho*D + 32h`, where `h = minSubnormal^(1/4)`.
+4. [FmaSwapReconstruction.lean](DistanceAccuracy/FmaSwapReconstruction.lean)
+   separately proves the lower-bound reconstruction estimate in the new
+   order. The inner exact point is now `Q0 - ((1-s)P0 + sP1)`. The scalar
+   error remains at most `15rho*L`. `FmaSwapLower` and `FmaSwapEvaluation`
+   propagate this through candidate selection and prove the small-coordinate
+   two-sided bound, including underflow and zero-length directions.
+5. `FmaSwapFinal` assembles the two inequalities for every pairing. The
+   earlier models and their theorems remain unchanged. The new assembly
+   modules mirror the reciprocal revision while calling the new evaluator;
+   parameter-solve, geometric, envelope, and format-budget lemmas are shared.
+
+### Checking this revision
+
+The root Julia workspace pins SimplexCellLists.jl to `e7f0a8d`. From this
+directory:
+
+```sh
+lake build
+lake env lean FmaSwapAudit.lean
+julia --project=. --startup-file=no generate_model_fixtures.jl --fma-swap
+lake env lean FmaSwapFixtures.lean
+julia --project=. --startup-file=no check_segment_kernel.jl 10000
+```
+
+The final theorems and the changed reconstruction lemmas report only
+`propext`, `Classical.choice`, and `Quot.sound`. There are no `sorry`, custom
+axioms, or `native_decide` proofs. The 62 runtime fixtures compare squared
+distance, separation vectors, and weights in both formats, including general
+3D cases that exercise the changed FMA order. The `287e746` model fails the
+`fma-order-skew` fixture. These fixtures supplement the universal
+kernel-checked theorem.
+
+The generator checks the SHA256 of `src/distances.jl` before writing
+fixtures, so loading the wrong package version fails explicitly. At
+`e7f0a8d`, `check_segment_kernel.jl 10000` passed 20,000 segment cases
+against exact-rational reference distances and 4,000 higher-kernel cases
+with exact supporting-plane certificates. The largest sampled error was
+3.04% of the full constant-64 bound.
+
 ## Reciprocal-and-multiply revision
 
 **The same constant 64 is proved for SimplexCellLists.jl commit
@@ -123,14 +220,17 @@ supplies the independently checked lower and small-coordinate bounds.
 
 ### Revision checks
 
-From this directory:
+The root workspace now pins `e7f0a8d`, so regenerate these fixtures in a
+separate environment with `287e746`. The generator refuses any other
+`src/distances.jl`. From this directory:
 
 ```sh
+julia --startup-file=no -e 'using Pkg; Pkg.activate("/tmp/scl-287e746"); Pkg.add(PackageSpec(url="https://github.com/medyan-dev/SimplexCellLists.jl.git", rev="287e746639b4e6aa63dba105cdd023fdd6dfe086")); Pkg.add("StaticArrays")'
 lake build
 lake env lean InvMultiplyAudit.lean
-julia --project=. --startup-file=no generate_model_fixtures.jl --inv-multiply
+julia --project=/tmp/scl-287e746 --startup-file=no generate_model_fixtures.jl --inv-multiply
 lake env lean InvMultiplyFixtures.lean
-julia --project=. --startup-file=no check_segment_kernel.jl 10000
+julia --project=/tmp/scl-287e746 --startup-file=no check_segment_kernel.jl 10000
 ```
 
 The axiom audit checks the actual executable-model theorem and reports only
@@ -155,7 +255,7 @@ theorem; they are not its justification.
 segment/triangle inputs, found by search. All coordinates are exactly
 representable integers, and both pairs intersect exactly (`d = 0`). With
 `ell` the largest absolute input coordinate and real square root, at
-`287e746`:
+`287e746` and at `e7f0a8d`, which return the same output bits on them:
 
 | Format | `abs(sqrt(q) - d) / (eps(T) * ell)` | `ell` |
 | --- | ---: | ---: |
@@ -187,9 +287,9 @@ its optional argument sets the iteration count per format (default 50 million).
 
 ## Authorship
 
-The original three-candidate proof, the reciprocal-and-multiply revision,
-their Lean development, and checks were written by Codex GPT-6 Astra.
-Claude Opus 5.5 independently reviewed both; see
+The original three-candidate proof, the reciprocal-and-multiply and
+FMA-order revisions, their Lean development, and checks were written by
+Codex GPT-6 Astra. Claude Opus 5.5 independently reviewed all three; see
 [Independent review](#independent-review).
 
 ## Final theorems
@@ -226,13 +326,16 @@ relies on these unverified links:
   pinned [lean-ieee754](https://github.com/tunnellm/lean-ieee754) library, not
   about hardware. A rounding bug in that library would make the theorem
   describe the wrong arithmetic. The model fixtures compare it with hardware
-  results on 42 inputs, and the revision's fixtures on 54.
+  results on 42 inputs, the reciprocal revision on 54, and the FMA-order
+  revision on 62.
 - **Transcription.** [IEEEAlgorithm.lean](DistanceAccuracy/IEEEAlgorithm.lean)
   transcribes the arithmetic, exceptional-value handling, clamps, candidate
   comparisons, weight remappings, and folds in `src/distances.jl` and
   `src/util.jl` of SimplexCellLists.jl 0.3.0, and
   [InvMultiplyAlgorithm.lean](DistanceAccuracy/InvMultiplyAlgorithm.lean)
-  replaces its segment kernel with that of `287e746`. The correspondence is
+  replaces its segment kernel with that of `287e746`.
+  [FmaSwapAlgorithm.lean](DistanceAccuracy/FmaSwapAlgorithm.lean) transcribes
+  the final FMA-order change at `e7f0a8d`. The correspondence is
   reviewed and regression-tested; it is not a verified Julia compiler or a
   machine-checked source translation.
 - **Julia runtime.** The theorem assumes default IEEE behavior. It does not
@@ -285,9 +388,9 @@ squared distance, separation vector, and weights, in both formats and argument
 orders. These fixtures catch transcription regressions; the universal accuracy
 result comes from the Lean proof. They were generated with
 SimplexCellLists.jl 0.3.0, which `IEEEAlgorithm.lean` transcribes. The root
-workspace now pins `287e746`, whose new segment kernel gives a different `t`
-weight in the `parallel-segments` fixture, so regenerate them in an
-environment with 0.3.0 rather than with `--project=distance-accuracy`.
+workspace now pins `e7f0a8d`. Its segment kernel, new since `287e746`, gives
+a different `t` weight in the `parallel-segments` fixture, so regenerate them
+in an environment with 0.3.0 rather than with `--project=distance-accuracy`.
 
 ### Independent numerical checks
 
@@ -305,8 +408,8 @@ counterexample. They supplement the formal proof.
 
 The Julia scripts use the `distance-accuracy` project, a member of the root
 workspace. The root `Manifest.toml` pins SimplexCellLists.jl to commit
-`287e746`. All three checks also pass there; the counterexample uses the
-segment/triangle crossing path, which did not change.
+`e7f0a8d`. All three checks also pass there and at `287e746`; the
+counterexample uses the segment/triangle crossing path, which did not change.
 
 ## Independent review
 
@@ -353,3 +456,40 @@ against SimplexCellLists.jl `287e746`:
   nearly parallel, crossing, short, long/short, and far-from-origin cases
   per format plus hill climbing, against an exact rational reference, found
   errors of at most `3.85*eps(T)*ell`.
+
+On 2026-11-04, Claude Opus 5.5 reviewed the FMA-order revision against
+SimplexCellLists.jl `e7f0a8d`, and repinned the root workspace to it:
+
+- `e7f0a8d` is on SimplexCellLists.jl's `main`, and the SHA256 of its
+  `src/distances.jl` matches the one above. Its diff from `287e746` changes
+  only the `r` line of the segment kernel and a comment in
+  `src/distances.jl`. The rest adds `src/show.jl` (printing) and tests.
+  `FmaSwapAlgorithm.lean` differs from `InvMultiplyAlgorithm.lean` only in
+  that line, which matches `fma3(t, Q, fma3(-s, P, Q0mP0))`.
+- After `lake build`, `lake env lean FmaSwapAudit.lean` passes. The final
+  theorems depend only on `propext`, `Classical.choice`, and `Quot.sound`.
+  The revision adds 19 modules and changes no earlier one. Up to renaming,
+  13 are copies of their `InvMultiply` counterparts. `FmaSwapAlgorithm` and
+  `FmaSwapCore` differ only in the `r` line. `FmaSwapKernelUpper` and
+  `FmaSwapLower` differ only where they call the two new modules,
+  `FmaSwapStored` and `FmaSwapReconstruction`; the inner residual is now
+  bounded with `t = 0` instead of `s = 0`. None uses `sorry`, axioms,
+  `native_decide`, `implemented_by`, `extern`, or `opaque`.
+- `fmaSwapAccuracyStatement` is `Geometry.accuracyStatement` with only the
+  evaluator replaced. A restatement of `fmaSwapClaim4_binary64` with literal
+  constants (`2^-52`, `2^-1022`, `(2^53 - 1) * 2^971`) and the explicit
+  premises type-checks against the theorem.
+- In the compiled LLVM IR of the Julia segment kernel, in both formats,
+  there are 28 `llvm.fma` calls, two `fdiv 1.0, x` reciprocals, and one
+  direct `fdiv`, with no fast-math, contraction, or reciprocal flags.
+- Regenerating `FmaSwapFixtures.lean` with the root workspace reproduced it
+  exactly, and all 62 fixtures pass. The `287e746` model fails the new
+  `fma-order-skew` fixture, so the fixtures distinguish the two orders.
+  `InvMultiplyFixtures.lean`, regenerated in a `287e746` environment, is
+  also unchanged.
+- At `e7f0a8d`, `check_segment_kernel.jl 10000` passes (largest sampled
+  error 3.03% of the bound), as do `rounding_examples.jl`, with the same
+  output bits as at `287e746`, `RoundingExamples.lean`, the three older
+  numerical checks, and SimplexCellLists.jl's `test/test-mindistance.jl`.
+- `generate_model_fixtures.jl --inv-multiply` now also checks the SHA256 of
+  `src/distances.jl`, so it cannot silently use the new pin.

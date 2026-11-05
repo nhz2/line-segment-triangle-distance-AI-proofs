@@ -42,3 +42,4 @@ import DistanceAccuracy.LineReduction
 import DistanceAccuracy.KernelCoverage
 import DistanceAccuracy.FinalClaim4
 import DistanceAccuracy.InvMultiplyFinal
+import DistanceAccuracy.FmaSwapFinal

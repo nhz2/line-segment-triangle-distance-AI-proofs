@@ -1,13 +1,21 @@
 # Regenerate raw-bit fixtures from the Julia implementation. The independent
 # Lean IEEE model checks these at runtime; these are regression tests, not proofs.
-using SimplexCellLists, StaticArrays
-const inv_multiply = "--inv-multiply" in ARGS
-const model = inv_multiply ? "InvMultiplyAlgorithm" : "IEEEAlgorithm"
-const evaluator = inv_multiply ? "InvMultiplyAlgorithm.evaluate" : "evaluate"
-const fixture_namespace = inv_multiply ? "InvMultiplyFixtures" : "ModelFixtures"
+using SimplexCellLists, StaticArrays, SHA
+const fma_swap = "--fma-swap" in ARGS
+const inv_multiply = "--inv-multiply" in ARGS || fma_swap
+const model = fma_swap ? "FmaSwapAlgorithm" : inv_multiply ? "InvMultiplyAlgorithm" : "IEEEAlgorithm"
+const evaluator = fma_swap ? "FmaSwapAlgorithm.evaluate" : inv_multiply ? "InvMultiplyAlgorithm.evaluate" : "evaluate"
+const fixture_namespace = fma_swap ? "FmaSwapFixtures" : inv_multiply ? "InvMultiplyFixtures" : "ModelFixtures"
+if inv_multiply
+    source = joinpath(dirname(pathof(SimplexCellLists)), "distances.jl")
+    expected, commit = fma_swap ?
+        ("cdd29e8492a81ba0946bf0a121aa4fc258df933d242e9f61826c0aabc9823bb8", "e7f0a8d") :
+        ("06acfcfef240ea8b03db01a1072141cf0d568c449806ec982471a08a9254fd2c", "287e746")
+    @assert bytes2hex(sha256(read(source))) == expected "$(fma_swap ? "--fma-swap" : "--inv-multiply") requires src/distances.jl from $commit"
+end
 const destination = joinpath(@__DIR__, fixture_namespace * ".lean")
 const origin = SA[0,0,0]
-const cases = [
+const cases = Any[
     ("point-point", [origin], [SA[1,2,3]]),
     ("point-segment", [SA[0,1,0]], [SA[-1,0,0],SA[1,0,0]]),
     ("point-triangle", [SA[0,0,1]], [SA[-1,-1,0],SA[1,-1,0],SA[0,1,0]]),
@@ -20,6 +28,14 @@ const cases = [
     ("large-error", [SA[-9373420,-7754638,-8416905],SA[9778836,10196786,10057847]],
         [SA[-10350544,-10332076,-10169968],SA[10350545,7004759,9067019],SA[9871916,10332077,10169969]])
 ]
+if fma_swap
+    # General 3D residuals expose the difference between the two FMA orders.
+    append!(cases, [
+        ("fma-order-skew", [SA[-0.91,0.72,-0.33],SA[0.83,-0.61,0.57]],
+            [SA[-0.64,-0.78,0.41],SA[0.75,0.86,-0.29]]),
+        ("fma-order-separated", [SA[-0.91,0.72,-0.33],SA[0.83,-0.61,0.57]],
+            [SA[1.64,1.78,1.41],SA[2.75,2.86,2.29]])])
+end
 word(x::Float32) = string(reinterpret(UInt32,x))
 word(x::Float64) = string(reinterpret(UInt64,x))
 vec(x) = "![" * join(word.(x),", ") * "]"
@@ -77,7 +93,7 @@ def checkFixture (I : Interchange) [I.Valid] (f : Fixture I) : IO Unit := do
 #eval do
   fixtures_fp32.forM (checkFixture fp32)
   fixtures_fp64.forM (checkFixture fp64)
-  IO.println "$(inv_multiply ? 54 : 42) IEEE model fixtures agree bit-for-bit with Julia (q, r, and weights)."
+  IO.println "$(fma_swap ? 62 : inv_multiply ? 54 : 42) IEEE model fixtures agree bit-for-bit with Julia (q, r, and weights)."
 end DistanceAccuracy.$fixture_namespace
 """)
 end

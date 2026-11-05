@@ -5,4 +5,4 @@ projects = ["distance-accuracy", "library-comparison"]
 SimplexCellLists = "fbe69cd6-f244-4ce4-a90b-8979d86c9ea4"
 
 [sources]
-SimplexCellLists = {rev = "287e746639b4e6aa63dba105cdd023fdd6dfe086", url = "https://github.com/medyan-dev/SimplexCellLists.jl.git"}
+SimplexCellLists = {rev = "e7f0a8ddb2e384638915430f6eab03f8189d9417", url = "https://github.com/medyan-dev/SimplexCellLists.jl.git"}

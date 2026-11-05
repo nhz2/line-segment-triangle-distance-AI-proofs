@@ -1,0 +1,14 @@
+import DistanceAccuracy.FmaSwapFinal
+#print DistanceAccuracy.fmaSwapAccuracyStatement
+#check DistanceAccuracy.fmaSwapClaim4
+#print axioms DistanceAccuracy.FmaSwapReconstruction.segment_trace
+#print axioms DistanceAccuracy.FmaSwapStored.segment_candidate_score_sharp
+#print axioms DistanceAccuracy.FmaSwapKernelUpper.kernel_upper
+#print axioms DistanceAccuracy.FmaSwapEvaluation.small_accuracy
+#print axioms DistanceAccuracy.FmaSwapSegmentUpper.accuracy
+#print axioms DistanceAccuracy.FmaSwapTriangleUpper.segment_triangle_large
+#print axioms DistanceAccuracy.FmaSwapTriangleUpper.triangle_triangle_large
+#print axioms DistanceAccuracy.fmaSwapUpper
+#print axioms DistanceAccuracy.fmaSwapClaim4
+#print axioms DistanceAccuracy.fmaSwapClaim4_binary32
+#print axioms DistanceAccuracy.fmaSwapClaim4_binary64

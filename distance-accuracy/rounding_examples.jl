@@ -1,4 +1,4 @@
-# Run with the root workspace, which pins SimplexCellLists.jl commit 287e746:
+# Run with the root workspace, which pins SimplexCellLists.jl commit e7f0a8d:
 # julia --project=distance-accuracy --startup-file=no distance-accuracy/rounding_examples.jl
 # Add --generate-lean to regenerate RoundingExamples.lean.
 using SimplexCellLists, StaticArrays, LinearAlgebra, Test, SHA
